@@ -1,1 +1,0 @@
-{"dependencies":[["vagrant-vboxmanage",["= 0.0.2"]]],"checksum":"3a5f7c221ae8964d209f6473e9cba149e2dddb8b703f200da75d81b23d0ba28b","vagrant_version":"2.4.9"}
