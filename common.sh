@@ -4,9 +4,9 @@
 set -euxo pipefail
 
 # Kubernetes Versioning - Using stable versions
-KUBERNETES_VERSION=v1.33
-KUBERNETES_INSTALL_VERSION=1.33.2-1.1
-CRIO_VERSION=v1.33
+KUBERNETES_VERSION=v1.34
+KUBERNETES_INSTALL_VERSION=1.34.2-1.1
+CONTAINERD_VERSION=2.1.4
 
 # Disable swap
 swapoff -a
@@ -34,22 +34,29 @@ sysctl --system
 apt-get update -y
 apt-get install -y apt-transport-https ca-certificates curl gpg software-properties-common jq
 
-# Install CRI-O Runtime
-mkdir -p /etc/apt/keyrings
+# Install Contained Runtime
+wget https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/containerd-${CONTAINERD_VERSION}-linux-amd64.tar.gz
+tar Cxzvf /usr/local containerd-${CONTAINERD_VERSION}-linux-amd64.tar.gz
+rm -f containerd-${CONTAINERD_VERSION}-linux-amd64.tar.gz
 
-# Add CRI-O key and repo
-curl -fsSL https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key |
-    gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+# Install runc
+RUNC_VERSION=$(curl -s https://api.github.com/repos/opencontainers/runc/releases/latest | jq -r '.tag_name')
+wget https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.amd64
+install -m 755 runc.amd64 /usr/local/sbin/runc
+rm -f runc.amd64
 
-echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/$CRIO_VERSION/deb/ /" |
-    tee /etc/apt/sources.list.d/cri-o.list
+# Configure containerd
+mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 
-sudo apt-get update -y
-sudo apt-get install -y cri-o
-sudo systemctl daemon-reload
-sudo systemctl enable crio --now
+# Install systemd service
+mkdir -p /usr/lib/systemd/system
+wget -O /usr/lib/systemd/system/containerd.service https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+systemctl daemon-reload
+systemctl enable containerd --now
 
-echo "CRI runtime installed successfully"
+echo "Containerd runtime installed successfully"
 
 # Install Kubernetes components
 curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg

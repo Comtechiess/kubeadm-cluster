@@ -21,8 +21,8 @@ A complete guide to setting up Kubernetes cluster using Vagrant, VirtualBox, and
 
 
 # Technology Stack
-- Kubernetes: v1.33.2
-- CRI-O Runtime: v1.33
+- Kubernetes: v1.34.2
+- CONTAINERD Runtime: 2.1.4
 - Base OS: Ubuntu 24.04 (Bento)
 - CNI Plugin: Calico v3.30.0
 
@@ -73,12 +73,22 @@ kubeadm join 192.168.201.10:6443 --token <token> \
 ```
 Copy this command and run it on both node01 and node02 (as root):
 ```bash
+# Open New terminal
 vagrant ssh node01
 sudo su
+chmod +x /vagrant/common.sh
+/vagrant/common.sh
+
 # Paste the join command
+
+# Open New terminal
 vagrant ssh node02
 sudo su
-# Paste the join command 
+chmod +x /vagrant/common.sh
+/vagrant/common.sh
+
+# Paste the join command
+
 ```
 **Step 6: Verify Node Status**
 
@@ -90,9 +100,9 @@ kubectl get nodes
 You'll see nodes in `NotReady` state:
 ```bash
 NAME           STATUS     ROLES           AGE   VERSION
-controlplane   NotReady   control-plane   55m   v1.33.2
-node01         NotReady   <none>          8m    v1.33.2
-node02         NotReady   <none>          8m    v1.33.2
+controlplane   NotReady   control-plane   55m   v1.34.2
+node01         NotReady   <none>          8m    v1.34.2
+node02         NotReady   <none>          8m    v1.34.2
 ```
 This is expected because the CNI plugin hasn't been installed yet.
 
@@ -109,9 +119,9 @@ kubectl get nodes
 All nodes should now be `Ready`:
 ```bash
 NAME           STATUS   ROLES           AGE   VERSION
-controlplane   Ready    control-plane   60m   v1.33.2
-node01         Ready    <none>          13m   v1.33.2
-node02         Ready    <none>          13m   v1.33.2
+controlplane   Ready    control-plane   60m   v1.34.2
+node01         Ready    <none>          13m   v1.34.2
+node02         Ready    <none>          13m   v1.34.2
 ```
 Verify all pods are running:
 ```bash
@@ -121,7 +131,8 @@ kubectl get pods -A
 
 Test your cluster with the included nginx deployment:
 ```bash
-kubectl apply -f nginx-deployment.yaml
+
+kubectl apply -f /vagrant/nginx-deployment.yaml
 ```
 Verify the deployment:
 ```bash
@@ -136,7 +147,7 @@ nginx-deployment-96b9d695-9sztb   1/1     Running   0          40s
 nginx-deployment-96b9d695-wvwrq   1/1     Running   0          40s
 ```
 open in your browser:
-- http://192.168.201.10:32000
+http://192.168.201.10:32000
 
 
 
